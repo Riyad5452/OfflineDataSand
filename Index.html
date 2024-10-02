@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Dynamic Form with Firebase v8</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f9f9f9;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+
+    form {
+      max-width: 400px;
+      margin: 0 auto;
+      padding: 20px;
+      border-radius: 10px;
+      background-color: white;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    label {
+      display: block;
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+
+    input, textarea, button {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      box-sizing: border-box;
+    }
+
+    button {
+      background-color: #28a745;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #218838;
+    }
+
+    /* Offline Styling */
+    body.offline {
+      background-color: #f0ad4e;
+    }
+
+    body.offline h1 {
+      color: white;
+    }
+
+    body.offline form {
+      background-color: #f8d7da;
+      border: 2px solid #f5c6cb;
+    }
+
+    body.offline button {
+      background-color: #ffc107;
+      color: black;
+    }
+
+    body.offline button:hover {
+      background-color: #e0a800;
+    }
+  </style>
+</head>
+<body>
+  <h1>Smart Dynamic Form with Firebase</h1>
+
+  <form id="dataForm">
+    <label for="date">Date:</label>
+    <input type="date" id="date" required>
+
+    <label for="description">Description:</label>
+    <input type="text" id="description" required>
+
+    <label for="amount">Amount:</label>
+    <input type="number" id="amount" required>
+
+    <label for="details">Details:</label>
+    <textarea id="details" required></textarea>
+
+    <button type="submit">Submit</button>
+  </form>
+
+  <p id="status"></p>
+
+  <!-- Firebase v8 SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+  <script>
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyB67_Mn3b_2kNvzq3gQv2IbxAqOXb_denA",
+      authDomain: "noyonpur-afbda.firebaseapp.com",
+      databaseURL: "https://noyonpur-afbda-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "noyonpur-afbda",
+      storageBucket: "noyonpur-afbda.appspot.com",
+      messagingSenderId: "1091403233287",
+      appId: "1:1091403233287:web:5cd499bbd0247298a852a2"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // Form submission event
+    const form = document.getElementById('dataForm');
+    form.addEventListener('submit', function(event) {
+      event.preventDefault();
+
+      const data = {
+        date: document.getElementById('date').value,
+        description: document.getElementById('description').value,
+        amount: document.getElementById('amount').value,
+        details: document.getElementById('details').value,
+        timestamp: new Date().getTime()  // For sorting and syncing later
+      };
+
+      if (navigator.onLine) {
+        // If online, send data to Firestore immediately
+        getNextIdAndSendData(data);
+      } else {
+        // If offline, store data in localStorage
+        storeDataOffline(data);
+        document.getElementById('status').textContent = 'You are offline. Data saved locally.';
+      }
+    });
+
+    // Function to get the next ID from Firestore
+    function getNextIdAndSendData(data) {
+      const counterDocRef = db.collection('counters').doc('dataCounter');
+
+      counterDocRef.get().then((doc) => {
+        let nextId;
+        if (doc.exists) {
+          nextId = doc.data().count + 1;
+          counterDocRef.update({ count: nextId });
+        } else {
+          nextId = 1;
+          counterDocRef.set({ count: nextId });
+        }
+
+        data.id = nextId; // Add the generated ID to the data object
+        sendDataToFirestore(data);
+      }).catch((error) => {
+        console.error("Error getting next ID: ", error);
+        document.getElementById('status').textContent = 'Error getting next ID!';
+      });
+    }
+
+    // Function to store data offline in localStorage
+    function storeDataOffline(data) {
+      let offlineData = JSON.parse(localStorage.getItem('offlineData')) || [];
+      offlineData.push(data);
+      localStorage.setItem('offlineData', JSON.stringify(offlineData));
+    }
+
+    // Function to send data to Firestore
+    function sendDataToFirestore(data) {
+      db.collection('InvoiceOffline').add(data)
+        .then(() => {
+          document.getElementById('status').textContent = 'Data sent to Firestore successfully!';
+          removeOfflineData();
+          form.reset(); // Reset the form after successful submission
+        })
+        .catch((error) => {
+          console.error('Error sending data to Firestore: ', error);
+          document.getElementById('status').textContent = 'Error sending data!';
+        });
+    }
+
+    // Function to remove data from localStorage after successful sync
+    function removeOfflineData() {
+      localStorage.removeItem('offlineData');
+    }
+
+    // Sync stored data when back online
+    window.addEventListener('online', function() {
+      const savedData = JSON.parse(localStorage.getItem('offlineData'));
+      if (savedData && savedData.length > 0) {
+        savedData.forEach(data => {
+          sendDataToFirestore(data);
+        });
+        localStorage.removeItem('offlineData');
+        document.getElementById('status').textContent = 'All offline data synced to Firestore!';
+      }
+    });
+
+    // Offline/Online status detection
+    function updateOnlineStatus() {
+      if (navigator.onLine) {
+        document.body.classList.remove('offline');
+        document.getElementById('status').textContent = 'You are online.';
+      } else {
+        document.body.classList.add('offline');
+        document.getElementById('status').textContent = 'You are offline. Data will be saved locally.';
+      }
+    }
+
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
+    updateOnlineStatus();
+  </script>
+</body>
+</html>
