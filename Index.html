@@ -85,11 +85,53 @@
       border-color: #28a745;
       background-color: #d4edda;
     }
+.header-container {
+      text-align: center; /* Center all the content */
+      padding: 20px;
+      font-family: 'Arial', sans-serif;
+    }
+
+    .stamp {
+      height: 40px;
+      border-radius: 10px;
+      box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+      transition: transform 0.3s ease;
+      display: block;
+      margin: 0 auto;
+    }
+
+    .stamp:hover {
+      transform: scale(1.1);
+    }
+
+      .company-name {
+      font-size: 24px;
+      font-weight: bold;
+      color: #333;
+      margin: 10px 0;
+    }
+
+    .company-address {
+      font-size: 16px;
+      color: #666;
+      margin-bottom: 20px;
+    }
+
+    .header-container hr {
+      width: 50%;
+      border: 1px solid #ddd;
+      margin: 20px auto;
+    }
   </style>
 </head>
 <body>
-  <h1>Smart Dynamic Form with Firebase</h1>
-
+     <div class="container">
+    <div class="header-container">
+        <img src="https://iconape.com/wp-content/png_logo_vector/apex-shoes-logo.png" alt="Stamp" class="stamp">
+        <div class="company-name">NONGOR FOOTWEAR</div>
+        <div class="company-address">Noor Plaza, Ramganj,Lakshmipur</div>
+        <hr>
+      </div>
   <form id="dataForm">
     <label for="date">Date:</label>
     <input type="date" id="date" required>
@@ -107,7 +149,7 @@
   </form>
 
   <p id="status"></p>
-
+     </div>
   <!-- Firebase v8 SDKs -->
   <!-- Firebase v8 SDKs -->
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
