@@ -109,8 +109,10 @@
   <p id="status"></p>
 
   <!-- Firebase v8 SDKs -->
+  <!-- Firebase v8 SDKs -->
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
 
   <script>
     // Firebase configuration
@@ -149,6 +151,9 @@
         storeDataOffline(data);
         document.getElementById('status').textContent = 'You are offline. Data saved locally.';
       }
+
+      // Reset form after submission
+      form.reset();
     });
 
     // Function to get the next ID from Firestore
@@ -186,7 +191,6 @@
         .then(() => {
           document.getElementById('status').textContent = 'Data sent to Firestore successfully!';
           removeOfflineData();
-          form.reset(); // Reset the form after successful submission
         })
         .catch((error) => {
           console.error('Error sending data to Firestore: ', error);
